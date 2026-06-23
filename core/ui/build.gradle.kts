@@ -5,7 +5,7 @@ plugins {
 }
 android {
     namespace = "com.bowlingtracker.core.ui"
-    compileSdk = 34
+    compileSdk = 35
     defaultConfig { minSdk = 26 }
     buildFeatures { compose = true }
     compileOptions {
