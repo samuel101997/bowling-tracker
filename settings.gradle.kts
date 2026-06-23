@@ -15,28 +15,24 @@ dependencyResolutionManagement {
 
 rootProject.name = "bowling-tracker"
 
+// Only modules with build files are included so Gradle can sync. The remaining
+// modules (core:testing, data:persistence, feature:*) are added as they are
+// implemented — see docs/ARCHITECTURE.md §5 for the full target module set.
+
 // ---- Foundation (L0) ----
 include(":core:common")
 include(":core:domain")
 include(":core:ui")
-include(":core:testing")
 
 // ---- Data (L3) ----
-include(":data:persistence")
 include(":data:media")
 
-// ---- Engine: pure analysis libraries (L2) + orchestrator (L3) ----
+// ---- Engine (L2 pure + L3 orchestrator) ----
 include(":engine:vision")
 include(":engine:tracking")
 include(":engine:calibration")
 include(":engine:physics")
 include(":engine:analysis")
-
-// ---- Feature UI (L4) ----
-include(":feature:capture")
-include(":feature:calibration")
-include(":feature:results")
-include(":feature:history")
 
 // ---- App (L5) ----
 include(":app")

@@ -22,6 +22,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - `engine:tracking` module — RANSAC `TrajectoryLinker` that links per-frame detections into a clean `Trajectory` via a quadratic-in-time flight model and residual-based outlier rejection. Deterministic; verified against a Python prototype (seed-robust across 200 seeds). Known-answer tests.
 - `engine:vision` module (Android library) — `BallDetector` port implementation scaffold (`OpenCvMotionBallDetector`). OpenCV/LiteRT confined here behind the port. Requires Android Studio / on-device build to compile and verify (golden-frame fixtures).
 - `engine:analysis` module — `DefaultAnalysisEngine` implementing the `AnalysisEngine` port; orchestrates detect→link→calibrate→physics and maps to domain `Insights`, stamped with engine version. End-to-end pipeline test with a fake detector + real tracking/physics (144 km/h known answer).
+- `core:ui` module — Compose Material3 theme (`BowlingTrackerTheme`).
+- `data:media` module — `AndroidMediaStore` implementing the `MediaStore` port (passthrough frame metadata for the first runnable build; real MediaCodec extraction to follow).
+- `:app` module — **walking-skeleton app**: launches, runs the real analysis engine on a synthetic straight-line delivery via a `SyntheticBallDetector`, and displays the computed speed/swing (144 km/h) on a Compose home screen. No camera/Room yet; proves the pipeline runs on-device.
+- Version catalog extended with Compose/Hilt/Room/CameraX; `gradle-wrapper.properties` (Gradle 8.9). `settings.gradle.kts` trimmed to currently-buildable modules.
 
 ### Changed
 - _nothing yet_
