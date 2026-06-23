@@ -251,3 +251,21 @@ A change is complete only when **all** of the following are true (full checklist
 6. The relevant `docs/modules/<module>.md` is updated.
 
 This document and the governance docs are themselves under change control: updating architecture is a normal, expected, **documented** action — not something done by surprise.
+
+---
+
+## 11. Version control & credentials
+
+- **Remote:** `https://github.com/samuel101997/bowling-tracker` — branch `main` is canonical.
+- **Commit policy:** every logical change is its own commit using conventional-commit messages (`type(scope): summary`); each is reflected in `CHANGELOG.md`. See [`CONTRIBUTING.md`](CONTRIBUTING.md).
+- **Authentication:** pushes use a GitHub **Personal Access Token** with *Contents: Read & write* on this repo only.
+
+### Never commit the token
+A PAT is a password equivalent. It must **never** be written into any tracked file (including this one), because committed secrets are pushed to GitHub, scanned by bots within seconds, and auto-revoked. `.gitignore` excludes `*.token` and `secrets.properties` for this reason.
+
+**Store the token locally instead, one of:**
+- **Git credential helper** (recommended): `git config --global credential.helper store` then push once and enter the token — Git caches it in `~/.git-credentials` (outside the repo).
+- **Environment variable** for scripted pushes: keep it in your shell profile, not the repo.
+- **`secrets.properties`** in the project root (git-ignored) if a build step ever needs it.
+
+To rotate: revoke at <https://github.com/settings/tokens> and create a new one — no repo change required.
