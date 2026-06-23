@@ -46,3 +46,8 @@ interface PhysicsAnalyzer {
 ## Versioning notes
 - Adding a new field to `PhysicsInsights` is additive → minor bump + CHANGELOG.
 - Changing how `releaseSpeed` is computed is a semantic change → **ADR required** + CHANGELOG `Changed` + bump engine version (results stamped per delivery).
+
+## Implementation status
+- **Implemented** in `engine:physics`. Public API: `PhysicsAnalyzer` interface + `physicsAnalyzer(releaseWindow)` factory; models `CalibratedTrajectory`, `TrajectoryPoint`, `PhysicsInsights`, `Swing`, `PitchPoint`.
+- `DefaultPhysicsAnalyzer` is `internal` (consumers use the interface).
+- Algorithms verified against a Python known-answer prototype before implementation; mirrored by JUnit5 fixtures in `engine/physics/src/test`.

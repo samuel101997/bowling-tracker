@@ -14,6 +14,9 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - `CLAUDE.md` — operating guide for AI agents.
 - ADRs: 0001 modular architecture, 0002 on-device record-then-process, 0003 single-camera accuracy bounds.
 - Contract template + `engine:physics` example contract; module-doc template + `engine:physics` example.
+- Gradle build foundation: `settings.gradle.kts`, root `build.gradle.kts`, `gradle.properties`, version catalog (`gradle/libs.versions.toml`).
+- `core:common` module — pure-Kotlin primitives: typed `Result`/`DomainError`, units (`Speed`/`Distance`/`Angle`/`Duration`), geometry (`Point2D`/`Vector2`), `Confidence`. Unit tests included.
+- `engine:physics` module — `PhysicsAnalyzer` computing release speed, bounce/pitch point, swing, and path angles from a calibrated trajectory; returns typed errors and confidence. Known-answer fixture tests (algorithms pre-verified in a Python prototype).
 
 ### Changed
 - _nothing yet_
