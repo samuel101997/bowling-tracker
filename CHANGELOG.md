@@ -28,7 +28,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - Version catalog extended with Compose/Hilt/Room/CameraX; `gradle-wrapper.properties` (Gradle 8.9). `settings.gradle.kts` trimmed to currently-buildable modules.
 
 ### Changed
-- _nothing yet_
+- `:app` — replaced the synthetic-only home screen with a real flow: Home → Record (CameraX video capture with runtime camera permission) → Result. Recording produces a real clip; analysis still uses the synthetic detector until OpenCV detection is wired. Added CAMERA permission and CameraX deps.
 
 ### Deprecated
 - _nothing yet_
