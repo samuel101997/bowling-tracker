@@ -17,6 +17,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - Gradle build foundation: `settings.gradle.kts`, root `build.gradle.kts`, `gradle.properties`, version catalog (`gradle/libs.versions.toml`).
 - `core:common` module — pure-Kotlin primitives: typed `Result`/`DomainError`, units (`Speed`/`Distance`/`Angle`/`Duration`), geometry (`Point2D`/`Vector2`), `Confidence`. Unit tests included.
 - `engine:physics` module — `PhysicsAnalyzer` computing release speed, bounce/pitch point, swing, and path angles from a calibrated trajectory; returns typed errors and confidence. Known-answer fixture tests (algorithms pre-verified in a Python prototype).
+- `core:domain` module — framework-free entities (Delivery, Session, Calibration, Trajectory, Insights), typed IDs, and ports (`AnalysisEngine`, `TrajectorySource`, `DeliveryRepository`, `MediaStore`); use cases `AnalyzeDeliveryUseCase`, `SaveDeliveryUseCase`. The `TrajectorySource` port keeps the multi-camera 3D seam open (ADR-0003). Use-case tests with fakes.
+- `engine:calibration` module — `Calibrator` computing the image→pitch homography via DLT (self-contained Jacobi eigensolver, no external linear-algebra dep). Known-answer tests; algorithm verified against a NumPy prototype and a Python port of the in-module solver.
 
 ### Changed
 - _nothing yet_
