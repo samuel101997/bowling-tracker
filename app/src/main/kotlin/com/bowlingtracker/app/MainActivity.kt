@@ -11,8 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -32,7 +31,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private enum class Screen { HOME, CALIBRATE, RECORD, RESULT, HISTORY }
+private enum class Screen { HOME, CAPTURE, SESSION, HISTORY }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,71 +43,45 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun AppNav(viewModel: HomeViewModel = viewModel()) {
     var screen by remember { mutableStateOf(Screen.HOME) }
-    val state by viewModel.state.collectAsState()
+    val session by viewModel.session.collectAsState()
     val history by viewModel.history.collectAsState()
 
     when (screen) {
         Screen.HOME -> HomeScreen(
-            onRecord = { screen = Screen.RECORD },
-            onCalibrate = { screen = Screen.CALIBRATE },
+            onStart = { screen = Screen.CAPTURE },
             onHistory = { screen = Screen.HISTORY },
         )
-        Screen.CALIBRATE -> CalibrationScreen(
-            onCalibrated = { taps, _, _ ->
-                viewModel.calibrateFromTaps(taps)
-                screen = Screen.HOME
-            },
-            onSkip = { screen = Screen.HOME },
-        )
-        Screen.RECORD -> RecordScreen(
-            onClipRecorded = { file ->
-                viewModel.analyzeClip(file.absolutePath)
-                screen = Screen.RESULT
+        Screen.CAPTURE -> CaptureScreen(
+            onCalibrated = { taps -> viewModel.calibrateFromTaps(taps) },
+            onSessionRecorded = { file ->
+                viewModel.processSession(file.absolutePath)
+                screen = Screen.SESSION
             },
         )
-        Screen.RESULT -> ResultScreen(state = state, onDone = { viewModel.reset(); screen = Screen.HOME })
+        Screen.SESSION -> SessionResultScreen(
+            state = session ?: SessionUiState.Running,
+            onDone = { viewModel.resetSession(); screen = Screen.HOME },
+        )
         Screen.HISTORY -> HistoryScreen(history = history, onBack = { screen = Screen.HOME })
     }
 }
 
 @Composable
-private fun HomeScreen(onRecord: () -> Unit, onCalibrate: () -> Unit, onHistory: () -> Unit) {
+private fun HomeScreen(onStart: () -> Unit, onHistory: () -> Unit) {
     Column(
         Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Text("Bowling Tracker", style = MaterialTheme.typography.headlineMedium)
-        Text("Record a delivery and get its speed.", style = MaterialTheme.typography.bodyMedium)
-        Button(onClick = onCalibrate, modifier = Modifier.padding(top = 24.dp)) { Text("Calibrate pitch") }
-        Button(onClick = onRecord, modifier = Modifier.padding(top = 8.dp)) { Text("Record a delivery") }
-        Button(onClick = onHistory, modifier = Modifier.padding(top = 8.dp)) { Text("History") }
-    }
-}
-
-@Composable
-private fun ResultScreen(state: AnalysisUiState, onDone: () -> Unit) {
-    Column(
-        Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        when (state) {
-            AnalysisUiState.Idle, AnalysisUiState.Running -> {
-                CircularProgressIndicator()
-                Text("Analyzing delivery…", modifier = Modifier.padding(top = 16.dp))
-            }
-            is AnalysisUiState.Done -> {
-                val i = state.insights
-                Text("Speed", style = MaterialTheme.typography.titleMedium)
-                Text("${"%.1f".format(i.releaseSpeed.kmPerHour)} km/h", style = MaterialTheme.typography.headlineLarge)
-                Text("Swing: ${i.swing.direction} (${"%.2f".format(i.swing.lateral.meters)} m)")
-                Text("Confidence: ${i.speedConfidence.level}", style = MaterialTheme.typography.bodySmall)
-            }
-            is AnalysisUiState.Error ->
-                Text("Couldn't analyze: ${state.message}")
+        Text(
+            "Set up your tripod, calibrate the pitch, and record a session.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Button(onClick = onStart, modifier = Modifier.padding(top = 24.dp)) {
+            Text("Calibrate & Record")
         }
-        Button(onClick = onDone, modifier = Modifier.padding(top = 24.dp)) { Text("Done") }
+        Button(onClick = onHistory, modifier = Modifier.padding(top = 8.dp)) { Text("History") }
     }
 }
 
@@ -123,7 +96,7 @@ private fun HistoryScreen(history: List<DeliveryEntity>, onBack: () -> Unit) {
             val avg = history.map { it.speedKmh }.average()
             val max = history.maxOf { it.speedKmh }
             Text(
-                "Session: ${history.size} balls · avg ${"%.1f".format(avg)} · max ${"%.1f".format(max)} km/h",
+                "${history.size} balls · avg ${"%.1f".format(avg)} · max ${"%.1f".format(max)} km/h",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(vertical = 8.dp),
             )
@@ -135,7 +108,7 @@ private fun HistoryScreen(history: List<DeliveryEntity>, onBack: () -> Unit) {
                             "${fmt.format(Date(d.recordedAtEpochMs))} · swing ${d.swingDirection} · ${d.confidence}",
                             style = MaterialTheme.typography.bodySmall,
                         )
-                        Divider(Modifier.padding(top = 8.dp))
+                        HorizontalDivider(Modifier.padding(top = 8.dp))
                     }
                 }
             }
