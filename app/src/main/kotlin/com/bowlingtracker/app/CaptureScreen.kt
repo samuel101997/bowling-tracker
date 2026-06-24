@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Surface
@@ -118,7 +120,7 @@ fun CaptureScreen(
         }
 
         // Top status bar
-        Surface(color = Color(0xCC000000), modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter)) {
+        Surface(color = Color(0xCC000000), modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter).statusBarsPadding()) {
             Column(Modifier.padding(12.dp)) {
                 when (phase) {
                     Phase.ALIGN -> {
@@ -134,7 +136,7 @@ fun CaptureScreen(
 
         // Bottom controls
         Row(
-            Modifier.fillMaxWidth().align(Alignment.BottomCenter).padding(16.dp),
+            Modifier.fillMaxWidth().align(Alignment.BottomCenter).navigationBarsPadding().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             when (phase) {

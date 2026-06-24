@@ -24,11 +24,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
-    private val mediaStore = AndroidMediaStore(app, maxFrames = 600) // longer sessions
+    private val mediaStore = AndroidMediaStore(app, maxFrames = 150) // longer sessions
     private val detector = OpenCvMotionBallDetector()
     private val perDelivery = DefaultAnalysisEngine(
         detector = detector,
@@ -79,18 +81,26 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     fun processSession(clipPath: String) {
         _session.value = SessionUiState.Running
         viewModelScope.launch {
-            val framesRes = mediaStore.extractFrames(clipPath)
-            val result = when (framesRes) {
-                is Result.Success -> sessionAnalyzer.analyzeSession(framesRes.value, calibration)
-                is Result.Failure -> framesRes
-            }
-            _session.value = when (result) {
-                is Result.Success -> {
-                    result.value.deliveries.forEach { store.save(it.insights) }
-                    SessionUiState.Done(result.value)
+            val ui = try {
+                withContext(Dispatchers.Default) {
+                    val framesRes = mediaStore.extractFrames(clipPath)
+                    when (framesRes) {
+                        is Result.Success ->
+                            when (val r = sessionAnalyzer.analyzeSession(framesRes.value, calibration)) {
+                                is Result.Success -> {
+                                    r.value.deliveries.forEach { store.save(it.insights) }
+                                    SessionUiState.Done(r.value)
+                                }
+                                is Result.Failure -> SessionUiState.Error(r.error.message)
+                            }
+                        is Result.Failure -> SessionUiState.Error(framesRes.error.message)
+                    }
                 }
-                is Result.Failure -> SessionUiState.Error(result.error.message)
+            } catch (e: Throwable) {
+                // Never crash: surface the failure so the user sees it (P9).
+                SessionUiState.Error("Processing failed: ${e.message ?: e.javaClass.simpleName}")
             }
+            _session.value = ui
         }
     }
 

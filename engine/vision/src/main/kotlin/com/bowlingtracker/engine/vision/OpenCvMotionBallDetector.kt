@@ -39,40 +39,50 @@ class OpenCvMotionBallDetector(
         var prevGray: Mat? = null
         val dtPerFrame = if (frames.fps > 0) 1.0 / frames.fps else 1.0 / 30.0
 
-        frames.frames.forEachIndexed { index, ref ->
-            val color = Imgcodecs.imread(ref.handle)
-            if (color.empty()) return@forEachIndexed
-            val gray = Mat()
-            Imgproc.cvtColor(color, gray, Imgproc.COLOR_BGR2GRAY)
-            Imgproc.GaussianBlur(gray, gray, org.opencv.core.Size(5.0, 5.0), 0.0)
+        try {
+            frames.frames.forEachIndexed { index, ref ->
+                val color = Imgcodecs.imread(ref.handle)
+                if (color.empty()) { color.release(); return@forEachIndexed }
+                val gray = Mat()
+                Imgproc.cvtColor(color, gray, Imgproc.COLOR_BGR2GRAY)
+                Imgproc.GaussianBlur(gray, gray, org.opencv.core.Size(5.0, 5.0), 0.0)
+                color.release()
 
-            val prev = prevGray
-            if (prev != null) {
-                val diff = Mat()
-                Core.absdiff(prev, gray, diff)
-                Imgproc.threshold(diff, diff, 25.0, 255.0, Imgproc.THRESH_BINARY)
-                Imgproc.morphologyEx(
-                    diff, diff, Imgproc.MORPH_OPEN,
-                    Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, org.opencv.core.Size(3.0, 3.0)),
-                )
-                val contours = ArrayList<MatOfPoint>()
-                Imgproc.findContours(
-                    diff, contours, Mat(),
-                    Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE,
-                )
-                bestBall(contours)?.let { (center, radius, score) ->
-                    detections.add(
-                        BallDetection(
-                            frameIndex = index,
-                            tSeconds = index * dtPerFrame,
-                            imagePoint = center,
-                            radiusPx = radius,
-                            score = score,
-                        ),
+                val prev = prevGray
+                if (prev != null) {
+                    val diff = Mat()
+                    Core.absdiff(prev, gray, diff)
+                    Imgproc.threshold(diff, diff, 25.0, 255.0, Imgproc.THRESH_BINARY)
+                    Imgproc.morphologyEx(
+                        diff, diff, Imgproc.MORPH_OPEN,
+                        Imgproc.getStructuringElement(Imgproc.MORPH_ELLIPSE, org.opencv.core.Size(3.0, 3.0)),
                     )
+                    val contours = ArrayList<MatOfPoint>()
+                    val hierarchy = Mat()
+                    Imgproc.findContours(
+                        diff, contours, hierarchy,
+                        Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE,
+                    )
+                    bestBall(contours)?.let { (center, radius, score) ->
+                        detections.add(
+                            BallDetection(
+                                frameIndex = index,
+                                tSeconds = index * dtPerFrame,
+                                imagePoint = center,
+                                radiusPx = radius,
+                                score = score,
+                            ),
+                        )
+                    }
+                    diff.release(); hierarchy.release()
+                    contours.forEach { it.release() }
+                    prev.release()
                 }
+                prevGray = gray
             }
-            prevGray = gray
+            prevGray?.release()
+        } catch (e: Throwable) {
+            return DomainError.Unexpected("Detection failed: ${e.message}").asFailure()
         }
 
         return if (detections.size >= 3) detections.asSuccess()

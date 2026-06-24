@@ -22,21 +22,29 @@ class OpenCvMotionProfiler : MotionProfiler {
         }
         val out = ArrayList<Double>(frames.frames.size)
         var prev: Mat? = null
-        for (ref in frames.frames) {
-            val color = Imgcodecs.imread(ref.handle)
-            if (color.empty()) { out.add(0.0); continue }
-            val gray = Mat()
-            Imgproc.cvtColor(color, gray, Imgproc.COLOR_BGR2GRAY)
-            Imgproc.GaussianBlur(gray, gray, org.opencv.core.Size(5.0, 5.0), 0.0)
-            val p = prev
-            if (p == null) {
-                out.add(0.0)
-            } else {
-                val diff = Mat()
-                Core.absdiff(p, gray, diff)
-                out.add(Core.mean(diff).`val`[0])
+        try {
+            for (ref in frames.frames) {
+                val color = Imgcodecs.imread(ref.handle)
+                if (color.empty()) { color.release(); out.add(0.0); continue }
+                val gray = Mat()
+                Imgproc.cvtColor(color, gray, Imgproc.COLOR_BGR2GRAY)
+                Imgproc.GaussianBlur(gray, gray, org.opencv.core.Size(5.0, 5.0), 0.0)
+                color.release()
+                val p = prev
+                if (p == null) {
+                    out.add(0.0)
+                } else {
+                    val diff = Mat()
+                    Core.absdiff(p, gray, diff)
+                    out.add(Core.mean(diff).`val`[0])
+                    diff.release()
+                    p.release()
+                }
+                prev = gray
             }
-            prev = gray
+            prev?.release()
+        } catch (e: Throwable) {
+            return DomainError.Unexpected("Motion profiling failed: ${e.message}").asFailure()
         }
         return out.asSuccess()
     }

@@ -39,6 +39,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - _nothing yet_
 
 ### Fixed
+- Capture controls no longer hidden behind the system navigation bar (added status/navigation bar insets).
+- Hardened session processing so OpenCV/frame errors surface as an on-screen message instead of crashing the app; release OpenCV Mats per frame to avoid native OOM; reduced session frame sampling (150) to fit phone memory; processing runs off the main thread.
 - Calibration draws a **batsman-stumps graphic** (3 stumps + bails) at the far edge of the pitch guide; taps 3 & 4 mark the batsman stump bases, whose midpoint is stored as the exact batting-end position.
 - Calibration now shows the **live camera** (not a static green box) with a tap overlay and a faint pitch-outline guide, so the user aligns to the real stumps and taps the actual pitch corners.
 - _nothing yet_
