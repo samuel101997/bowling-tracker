@@ -39,7 +39,10 @@ import androidx.core.content.ContextCompat
 import com.bowlingtracker.app.camera.bindPreviewOnly
 
 private val CORNER_LABELS = listOf(
-    "1: near-LEFT", "2: near-RIGHT", "3: far-RIGHT", "4: far-LEFT",
+    "1: near crease LEFT",
+    "2: near crease RIGHT",
+    "3: batsman stump RIGHT base",
+    "4: batsman stump LEFT base",
 )
 
 /**
@@ -106,6 +109,32 @@ fun CalibrationScreen(
             drawLine(guide, Offset(gr, bot), Offset(gtr, top), strokeWidth = 3f)
             drawLine(guide, Offset(gtr, top), Offset(gtl, top), strokeWidth = 3f)
             drawLine(guide, Offset(gtl, top), Offset(gl, bot), strokeWidth = 3f)
+
+            // Batting-end stumps graphic at the far (top) edge of the guide:
+            // three stumps + bails, centered between the far corners. Helps the
+            // user see where the batsman's stumps should sit before tapping.
+            val stumpsCenterX = (gtl + gtr) / 2f
+            val stumpsBaseY = top
+            val stumpH = size.height * 0.10f
+            val stumpW = (gtr - gtl) * 0.5f
+            val stumpColor = Color(0xFFFFFFFF)
+            for (k in -1..1) {
+                val sx = stumpsCenterX + k * (stumpW / 2f)
+                drawLine(
+                    stumpColor,
+                    Offset(sx, stumpsBaseY),
+                    Offset(sx, stumpsBaseY - stumpH),
+                    strokeWidth = 6f,
+                )
+            }
+            // bails across the top of the stumps
+            drawLine(
+                stumpColor,
+                Offset(stumpsCenterX - stumpW / 2f, stumpsBaseY - stumpH),
+                Offset(stumpsCenterX + stumpW / 2f, stumpsBaseY - stumpH),
+                strokeWidth = 4f,
+            )
+
             taps.forEachIndexed { i, p ->
                 drawCircle(Color.Yellow, radius = 16f, center = p)
             }
@@ -125,8 +154,10 @@ fun CalibrationScreen(
         ) {
             Column(Modifier.padding(12.dp)) {
                 Text(
-                    "Align the camera to the pitch. Tap the 4 pitch corners in order:",
-                    color = Color.White, style = TextStyle(fontSize = 14.sp),
+                    "Align the white stumps marker to the real batsman stumps, " +
+                        "then tap 4 points: near crease (L,R) and the batsman " +
+                        "stump bases (R,L).",
+                    color = Color.White, style = TextStyle(fontSize = 13.sp),
                 )
                 val next = if (taps.size < 4) CORNER_LABELS[taps.size] else "all set"
                 Text("Next tap → $next   (${taps.size}/4)", color = Color.Yellow)

@@ -66,13 +66,25 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             PointCorrespondence(Point2D(o.x.toDouble(), o.y.toDouble()), world[i])
         }
         when (val r = calib.computeHomography(corr)) {
-            is Result.Success -> calibration = Calibration(
-                id = CalibrationId("user"),
-                homographyRowMajor = r.value.m.toList(),
-                nearStumpsImage = Point2D(taps[0].x.toDouble(), taps[0].y.toDouble()),
-                farStumpsImage = Point2D(taps[3].x.toDouble(), taps[3].y.toDouble()),
-                createdAtEpochMs = System.currentTimeMillis(),
-            )
+            is Result.Success -> {
+                // near stumps midpoint = between taps 0 (near-L) and 1 (near-R)
+                val nearMid = Point2D(
+                    (taps[0].x + taps[1].x) / 2.0,
+                    (taps[0].y + taps[1].y) / 2.0,
+                )
+                // BATSMAN stumps midpoint = between taps 2 (far-R) and 3 (far-L)
+                val farMid = Point2D(
+                    (taps[2].x + taps[3].x) / 2.0,
+                    (taps[2].y + taps[3].y) / 2.0,
+                )
+                calibration = Calibration(
+                    id = CalibrationId("user"),
+                    homographyRowMajor = r.value.m.toList(),
+                    nearStumpsImage = nearMid,
+                    farStumpsImage = farMid, // exact batsman-stumps location in image
+                    createdAtEpochMs = System.currentTimeMillis(),
+                )
+            }
             is Result.Failure -> { /* keep previous calibration */ }
         }
     }
