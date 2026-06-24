@@ -5,6 +5,7 @@
     <uses-feature android:name="android.hardware.camera.any" android:required="true" />
 
     <application
+        android:name=".BowlingApp"
         android:allowBackup="true"
         android:label="Bowling Tracker"
         android:supportsRtl="true"

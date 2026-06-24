@@ -22,6 +22,7 @@ android {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:domain"))
+    implementation(libs.opencv)
     // OpenCV + LiteRT are added when wiring the on-device impl (see module doc).
     // implementation("org.opencv:opencv:4.10.0")
     // implementation("com.google.ai.edge.litert:litert:1.0.1")

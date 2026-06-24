@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -34,6 +35,8 @@ dependencies {
     implementation(project(":engine:calibration"))
     implementation(project(":engine:physics"))
     implementation(project(":engine:analysis"))
+    implementation(project(":engine:vision"))
+    implementation(project(":data:media"))
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
@@ -50,5 +53,11 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.video)
     implementation(libs.camerax.view)
+    // Room persistence
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
     debugImplementation(libs.compose.ui.tooling)
 }

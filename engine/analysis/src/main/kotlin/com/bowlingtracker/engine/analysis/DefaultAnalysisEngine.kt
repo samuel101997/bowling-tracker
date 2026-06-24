@@ -46,8 +46,12 @@ class DefaultAnalysisEngine(
         clip: ClipFrames,
         calibration: Calibration,
     ): Result<Insights, DomainError> {
+        // clip.clipRef is the frames directory; build refs to the extracted
+        // JPEGs (named f_0000.jpg ...). data:media wrote `clip.frameCount` of them.
         val sequence = FrameSequence(
-            frames = (0 until clip.frameCount).map { FrameRef(it, "${clip.clipRef}#$it") },
+            frames = (0 until clip.frameCount).map { i ->
+                FrameRef(i, "${clip.clipRef}/f_%04d.jpg".format(i))
+            },
             fps = clip.fps,
         )
 

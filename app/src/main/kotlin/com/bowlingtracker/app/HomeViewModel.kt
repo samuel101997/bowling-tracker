@@ -1,19 +1,29 @@
 package com.bowlingtracker.app
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.compose.ui.geometry.Offset
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.bowlingtracker.app.data.DeliveryEntity
+import com.bowlingtracker.app.data.DeliveryStore
 import com.bowlingtracker.core.common.Point2D
 import com.bowlingtracker.core.common.Result
 import com.bowlingtracker.core.domain.model.Calibration
 import com.bowlingtracker.core.domain.model.CalibrationId
 import com.bowlingtracker.core.domain.model.Insights
-import com.bowlingtracker.core.domain.port.ClipFrames
+import com.bowlingtracker.core.domain.model.PitchGeometry
+import com.bowlingtracker.data.media.AndroidMediaStore
 import com.bowlingtracker.engine.analysis.DefaultAnalysisEngine
+import com.bowlingtracker.engine.calibration.PointCorrespondence
+import com.bowlingtracker.engine.calibration.calibrator
 import com.bowlingtracker.engine.physics.physicsAnalyzer
 import com.bowlingtracker.engine.tracking.trajectoryLinker
+import com.bowlingtracker.engine.vision.OpenCvMotionBallDetector
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed interface AnalysisUiState {
@@ -23,40 +33,75 @@ sealed interface AnalysisUiState {
     data class Error(val message: String) : AnalysisUiState
 }
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
-    // For now still uses the synthetic detector; OpenCV detection is wired in
-    // the next feature. The clip path is accepted so the camera flow is real.
+    private val mediaStore = AndroidMediaStore(app)
     private val engine = DefaultAnalysisEngine(
-        detector = SyntheticBallDetector(),
+        detector = OpenCvMotionBallDetector(),
         linker = trajectoryLinker(),
         physics = physicsAnalyzer(releaseWindow = 10),
     )
+    private val store = DeliveryStore(app)
+    private val calib = calibrator()
 
-    private val identityCalibration = Calibration(
+    /** Current calibration; defaults to identity until the user calibrates. */
+    private var calibration: Calibration = identity()
+
+    private val _state = MutableStateFlow<AnalysisUiState>(AnalysisUiState.Idle)
+    val state: StateFlow<AnalysisUiState> = _state.asStateFlow()
+
+    val history: StateFlow<List<DeliveryEntity>> =
+        store.observeAll().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    /** Build a homography from the 4 tapped pitch corners (image px) → metres. */
+    fun calibrateFromTaps(taps: List<Offset>) {
+        if (taps.size != 4) return
+        val w = PitchGeometry.STUMPS_WIDTH_M * 6 // ~1.37 m usable lateral band
+        val l = PitchGeometry.CREASE_TO_CREASE_M
+        // world rectangle: near-left(0,0) near-right(w,0) far-right(w,l) far-left(0,l)
+        val world = listOf(
+            Point2D(0.0, 0.0), Point2D(w, 0.0), Point2D(w, l), Point2D(0.0, l),
+        )
+        val corr = taps.mapIndexed { i, o ->
+            PointCorrespondence(Point2D(o.x.toDouble(), o.y.toDouble()), world[i])
+        }
+        when (val r = calib.computeHomography(corr)) {
+            is Result.Success -> calibration = Calibration(
+                id = CalibrationId("user"),
+                homographyRowMajor = r.value.m.toList(),
+                nearStumpsImage = Point2D(taps[0].x.toDouble(), taps[0].y.toDouble()),
+                farStumpsImage = Point2D(taps[3].x.toDouble(), taps[3].y.toDouble()),
+                createdAtEpochMs = System.currentTimeMillis(),
+            )
+            is Result.Failure -> { /* keep previous calibration */ }
+        }
+    }
+
+    fun analyzeClip(clipPath: String) {
+        _state.value = AnalysisUiState.Running
+        viewModelScope.launch {
+            val framesResult = mediaStore.extractFrames(clipPath)
+            val result = when (framesResult) {
+                is Result.Success -> engine.analyze(framesResult.value, calibration)
+                is Result.Failure -> framesResult
+            }
+            _state.value = when (result) {
+                is Result.Success -> {
+                    store.save(result.value)
+                    AnalysisUiState.Done(result.value)
+                }
+                is Result.Failure -> AnalysisUiState.Error(result.error.message)
+            }
+        }
+    }
+
+    fun reset() { _state.value = AnalysisUiState.Idle }
+
+    private fun identity() = Calibration(
         id = CalibrationId("default"),
         homographyRowMajor = listOf(1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0),
         nearStumpsImage = Point2D(0.0, 0.0),
         farStumpsImage = Point2D(0.0, 20.0),
         createdAtEpochMs = 0L,
     )
-
-    private val _state = MutableStateFlow<AnalysisUiState>(AnalysisUiState.Idle)
-    val state: StateFlow<AnalysisUiState> = _state.asStateFlow()
-
-    /** Analyze a recorded clip. [clipPath] is the real recorded video for now
-     *  passed through; frame count/fps are placeholders until extraction is wired. */
-    fun analyzeClip(clipPath: String) {
-        _state.value = AnalysisUiState.Running
-        viewModelScope.launch {
-            // clipRef encodes path|frameCount|fps for the passthrough MediaStore.
-            val clip = ClipFrames(clipRef = clipPath, frameCount = 11, fps = 20.0)
-            _state.value = when (val r = engine.analyze(clip, identityCalibration)) {
-                is Result.Success -> AnalysisUiState.Done(r.value)
-                is Result.Failure -> AnalysisUiState.Error(r.error.message)
-            }
-        }
-    }
-
-    fun reset() { _state.value = AnalysisUiState.Idle }
 }

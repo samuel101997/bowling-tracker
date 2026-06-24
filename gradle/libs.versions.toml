@@ -9,6 +9,7 @@ composeBom = "2024.06.00"
 room = "2.6.1"
 hilt = "2.51.1"
 camerax = "1.5.0"
+opencv = "4.11.0"
 
 [libraries]
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -40,6 +41,7 @@ camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "ca
 camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 camerax-video = { module = "androidx.camera:camera-video", version.ref = "camerax" }
 camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+opencv = { module = "org.opencv:opencv", version.ref = "opencv" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

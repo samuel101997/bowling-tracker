@@ -29,6 +29,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 
 ### Changed
 - `:app` — replaced the synthetic-only home screen with a real flow: Home → Record (CameraX video capture with runtime camera permission) → Result. Recording produces a real clip; analysis still uses the synthetic detector until OpenCV detection is wired. Added CAMERA permission and CameraX deps.
+- **Full app features**: stump **calibration** screen (tap 4 pitch corners → homography via engine:calibration); real **OpenCV ball detection** (`OpenCvMotionBallDetector`, org.opencv:opencv 4.11.0) on frames extracted by `data:media` (MediaMetadataRetriever); **Room persistence** of every delivery; **History** screen with session avg/max trends. OpenCV initialized in `BowlingApp`. Navigation: Home → Calibrate/Record/History → Result.
 
 ### Deprecated
 - _nothing yet_
