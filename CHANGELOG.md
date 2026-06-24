@@ -38,6 +38,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) · Versioning: 
 - _nothing yet_
 
 ### Fixed
+- Calibration now shows the **live camera** (not a static green box) with a tap overlay and a faint pitch-outline guide, so the user aligns to the real stumps and taps the actual pitch corners.
 - _nothing yet_
 
 ### Security
